@@ -1,7 +1,7 @@
 import os
 import os.path
 from random import randint
-from time import sleep
+import re
 
 import tweepy
 from config import Config
@@ -24,24 +24,21 @@ class TwitterManager(tweepy.StreamingClient):
 
     def on_tweet(self, tweet):
         try:
-            for referenced_tweet in tweet.referenced_tweets:
-                matches = ["faz", "o", "l"]
-                if (
-                    referenced_tweet["type"] == "replied_to"
-                    and tweet.data["author_id"] != str(self.config.author_id)
-                    and (word in tweet.text for word in matches),
-                ):
-                    max = 0
-                    for _ in os.listdir("/workspace/images"):
-                        max += 1
-                    number = randint(1, max)
-                    self.twitter.update_status_with_media(
-                        filename=f"/workspace/images/lula_{number}.png",
-                        status="",
-                        in_reply_to_status_id=tweet.id,
-                        auto_populate_reply_metadata=True,
-                    )
-                    print(tweet.data)
-                    sleep(20)
+            if (
+                tweet.referenced_tweets[0]["type"] == "replied_to"
+                and tweet.data["author_id"] != str(self.config.author_id)
+                and re.search(r"(faz o .*l.*)|(faz um .*l.*)", tweet.text)
+            ):
+                max = 0
+                for _ in os.listdir("/workspace/images"):
+                    max += 1
+                number = randint(1, max)
+                self.twitter.update_status_with_media(
+                    filename=f"/workspace/images/lula_{number}.png",
+                    status="",
+                    in_reply_to_status_id=tweet.id,
+                    auto_populate_reply_metadata=True,
+                )
+                print(tweet.data)
         except Exception as err:
             print(err)
